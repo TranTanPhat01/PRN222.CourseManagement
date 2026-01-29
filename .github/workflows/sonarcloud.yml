@@ -2,13 +2,9 @@ name: SonarCloud
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [ master, main ]
   pull_request:
-    branches:
-      - master
-      - main
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -25,17 +21,29 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Install SonarScanner
+        run: dotnet tool update --global dotnet-sonarscanner
+
       - name: Restore
-        run: dotnet restore PRN222.CourseManagement.sln
+        run: dotnet restore
 
-      - name: Build
-        run: dotnet build PRN222.CourseManagement.sln --no-restore
-
-      - name: Test
-        run: dotnet test PRN222.CourseManagement.sln --no-build --verbosity normal
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+      - name: SonarCloud Begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet-sonarscanner begin
+          /k:"TranTanPhat01_PRN222.CourseManagement"
+          /o:"trantanphat01"
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.host.url="https://sonarcloud.io"
 
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+      - name: SonarCloud End
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
