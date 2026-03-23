@@ -47,6 +47,7 @@ namespace PRN222.CourseManagement.Web
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Fix Security Hotspot
             });
 
             var app = builder.Build();
