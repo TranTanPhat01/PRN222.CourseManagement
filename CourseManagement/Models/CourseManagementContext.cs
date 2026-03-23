@@ -108,6 +108,8 @@ public partial class CourseManagementContext : DbContext
         OnModelCreatingPartial(modelBuilder);
     }
 
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         // Empty implementation as required by SonarCloud
