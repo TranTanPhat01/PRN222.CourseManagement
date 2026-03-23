@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CourseManagement.Models;
 
 public enum CourseStatus
 {
-    Active = 1,
-    Inactive = 2,
-    Archived = 3
+    Active = 0,
+    Inactive = 1,
+    Archived = 2
 }
 
 public partial class Course

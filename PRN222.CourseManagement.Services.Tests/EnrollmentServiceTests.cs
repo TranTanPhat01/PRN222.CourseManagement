@@ -1,4 +1,4 @@
-﻿using CourseManagement.Models;
+using CourseManagement.Models;
 using CourseManagement.Repositories.Implementations;
 using CourseManagement.Services.Implementations;
 using NUnit.Framework;
@@ -70,9 +70,9 @@ namespace PRN222.CourseManagement.Services.Tests
         }
 
         /// <summary>
-        /// TC17: Test BR17 - Maximum 5 courses per student
-        /// Given: Student is enrolled in 5 courses
-        /// When: Attempting to enroll in a 6th course
+        /// TC17: Test BR17 - Maximum 10 courses per student (Updated)
+        /// Given: Student is enrolled in 10 courses
+        /// When: Attempting to enroll in an 11th course
         /// Then: Operation should fail with maximum courses error
         /// </summary>
         [Test]
@@ -83,7 +83,7 @@ namespace PRN222.CourseManagement.Services.Tests
             var unitOfWork = new UnitOfWork(context);
             var service = new EnrollmentService(unitOfWork);
 
-            // Given: Student enrolled in 5 courses
+            // Given: Student enrolled in 10 courses
             var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
             var student = new Student
             {
@@ -97,8 +97,8 @@ namespace PRN222.CourseManagement.Services.Tests
             context.Departments.Add(dept);
             context.Students.Add(student);
 
-            // Add 5 courses and enrollments
-            for (int i = 1; i <= 5; i++)
+            // Add 10 courses and enrollments
+            for (int i = 1; i <= 10; i++)
             {
                 var course = new Course
                 {
@@ -117,24 +117,24 @@ namespace PRN222.CourseManagement.Services.Tests
                 });
             }
 
-            // Add 6th course
-            var sixthCourse = new Course
+            // Add 11th course
+            var eleventhCourse = new Course
             {
-                CourseId = 6,
-                CourseCode = "CS106",
-                Title = "Course 6",
+                CourseId = 11,
+                CourseCode = "CS111",
+                Title = "Course 11",
                 Credits = 3,
                 DepartmentId = 1
             };
-            context.Courses.Add(sixthCourse);
+            context.Courses.Add(eleventhCourse);
             context.SaveChanges();
 
-            // When: Attempting to enroll in 6th course
-            var result = service.EnrollStudent(1, 6, DateTime.Now);
+            // When: Attempting to enroll in 11th course
+            var result = service.EnrollStudent(1, 11, DateTime.Now);
 
             // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Message, Does.Contain("more than 5 courses"));
+            Assert.That(result.Message, Does.Contain("more than 10 courses"));
 
             context.Dispose();
         }
@@ -191,13 +191,13 @@ namespace PRN222.CourseManagement.Services.Tests
         }
 
         /// <summary>
-        /// TC19: Test BR19 - Student can enroll only in courses of same department
+        /// TC19: Test BR19 - Cross-departmental enrollment (Updated)
         /// Given: Student in Computer Science department
         /// When: Attempting to enroll in a Mathematics course
-        /// Then: Operation should fail with department mismatch error
+        /// Then: Operation should succeed (Rule relaxed)
         /// </summary>
         [Test]
-        public void TC19_EnrollStudent_DifferentDepartment_ShouldFail()
+        public void TC19_EnrollStudent_DifferentDepartment_ShouldSucceed()
         {
             // Arrange
             var context = TestHelper.CreateInMemoryContext("TC19_DB");
@@ -213,7 +213,9 @@ namespace PRN222.CourseManagement.Services.Tests
                 StudentCode = "STU001",
                 FullName = "John Doe",
                 Email = "john@test.com",
-                DepartmentId = 1 // CS Dept
+                DepartmentId = 1, // CS Dept
+                DateOfBirth = DateTime.Now.AddYears(-20),
+                IsActive = true
             };
             var course = new Course
             {
@@ -221,7 +223,8 @@ namespace PRN222.CourseManagement.Services.Tests
                 CourseCode = "MATH101",
                 Title = "Calculus",
                 Credits = 3,
-                DepartmentId = 2 // Math Dept
+                DepartmentId = 2, // Math Dept
+                Status = CourseStatus.Active
             };
 
             context.Departments.AddRange(csDept, mathDept);
@@ -232,9 +235,8 @@ namespace PRN222.CourseManagement.Services.Tests
             // When: Attempting to enroll
             var result = service.EnrollStudent(1, 1, DateTime.Now);
 
-            // Then: Should fail
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Message, Does.Contain("own department"));
+            // Then: Should succeed because BR19 is relaxed
+            Assert.That(result.IsSuccess, Is.True);
 
             context.Dispose();
         }
@@ -455,27 +457,28 @@ namespace PRN222.CourseManagement.Services.Tests
 
             try
             {
-                // Given: Valid setup but will fail on department mismatch
-                var csDept = new Department { DepartmentId = 1, Name = "Computer Science" };
-                var mathDept = new Department { DepartmentId = 2, Name = "Mathematics" };
+                // Given: Student under 16 - will cause failure
+                var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
                 var student = new Student
                 {
                     StudentId = 1,
                     StudentCode = "STU001",
-                    FullName = "John Doe",
-                    Email = "john@test.com",
-                    DepartmentId = 1 // CS Dept
+                    FullName = "Young Kid",
+                    Email = "kid@test.com",
+                    DepartmentId = 1,
+                    DateOfBirth = DateTime.Now.AddYears(-10) // 10 tuổi < 16
                 };
                 var course = new Course
                 {
                     CourseId = 1,
-                    CourseCode = "MATH101",
-                    Title = "Calculus",
+                    CourseCode = "CS101",
+                    Title = "Programming",
                     Credits = 3,
-                    DepartmentId = 2 // Math Dept - will cause failure
+                    DepartmentId = 1,
+                    Status = CourseStatus.Active
                 };
 
-                context.Departments.AddRange(csDept, mathDept);
+                context.Departments.Add(dept);
                 context.Students.Add(student);
                 context.Courses.Add(course);
                 context.SaveChanges();
@@ -483,11 +486,12 @@ namespace PRN222.CourseManagement.Services.Tests
                 // Record initial enrollment count
                 var initialCount = context.Enrollments.Count();
 
-                // When: Attempting enrollment that should fail and rollback
+                // When: Attempting enrollment that should fail due to age and rollback
                 var result = service.EnrollStudent(1, 1, DateTime.Now);
 
                 // Then: Should fail
                 Assert.That(result.IsSuccess, Is.False);
+                Assert.That(result.Message, Does.Contain("16"));
 
                 // Verify rollback - enrollment count should be unchanged
                 var finalCount = context.Enrollments.Count();
@@ -529,7 +533,7 @@ namespace PRN222.CourseManagement.Services.Tests
         }
 
         [Test]
-        public void TC26_EnrollStudent_StudentUnder18_ShouldFail()
+        public void TC26_EnrollStudent_StudentUnder16_ShouldFail()
         {
             var context = TestHelper.CreateInMemoryContext("TC26_DB");
             var unitOfWork = new UnitOfWork(context);
@@ -540,10 +544,10 @@ namespace PRN222.CourseManagement.Services.Tests
             {
                 StudentId = 1,
                 StudentCode = "STU001",
-                FullName = "Teen Student",
-                Email = "teen@test.com",
+                FullName = "Young Student",
+                Email = "young@test.com",
                 DepartmentId = 1,
-                DateOfBirth = DateTime.Now.AddYears(-17) // < 18 tuổi
+                DateOfBirth = DateTime.Now.AddYears(-15) // < 16 tuổi
             };
 
             var course = new Course
@@ -552,7 +556,8 @@ namespace PRN222.CourseManagement.Services.Tests
                 CourseCode = "CS101",
                 Title = "Programming",
                 Credits = 3,
-                DepartmentId = 1
+                DepartmentId = 1,
+                Status = CourseStatus.Active
             };
 
             context.Departments.Add(dept);
@@ -565,7 +570,7 @@ namespace PRN222.CourseManagement.Services.Tests
 
             // Then
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Message, Does.Contain("18"));
+            Assert.That(result.Message, Does.Contain("16"));
 
             context.Dispose();
         }
@@ -716,7 +721,7 @@ namespace PRN222.CourseManagement.Services.Tests
             {
                 StudentId = 1,
                 CourseId = 1,
-                EnrollDate = DateTime.Now.AddDays(-40) // ngoài 30 ngày
+                EnrollDate = DateTime.Now.AddDays(-600) // ngoài 500 ngày
             };
 
             context.Departments.Add(dept);

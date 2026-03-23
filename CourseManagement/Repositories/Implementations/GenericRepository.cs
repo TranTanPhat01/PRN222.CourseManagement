@@ -1,4 +1,4 @@
-﻿using CourseManagement.Models;
+using CourseManagement.Models;
 using CourseManagement.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -24,11 +24,31 @@ namespace CourseManagement.Repositories.Implementations
         public IEnumerable<T> GetAll()
             => _dbSet.ToList();
 
+        public IEnumerable<T> GetAll(params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _dbSet;
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return query.ToList();
+        }
+
         public T? GetById(object id)
             => _dbSet.Find(id);
 
         public IEnumerable<T> Find(Expression<Func<T, bool>> predicate)
             => _dbSet.Where(predicate).ToList();
+
+        public IEnumerable<T> Find(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _dbSet;
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return query.Where(predicate).ToList();
+        }
 
         public void Add(T entity)
             => _dbSet.Add(entity);

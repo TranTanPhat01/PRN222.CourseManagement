@@ -15,7 +15,7 @@ namespace PRN222.CourseManagement.Services.Tests
         /// <summary>
         /// Creates a unique in-memory database context for testing
         /// </summary>
-        public static CourseManagementContext CreateInMemoryContext(string dbName = null)
+        public static CourseManagementContext CreateInMemoryContext(string? dbName = null)
         {
             var options = new DbContextOptionsBuilder<CourseManagementContext>()
                 .UseInMemoryDatabase(databaseName: dbName ?? Guid.NewGuid().ToString())
@@ -46,7 +46,7 @@ namespace PRN222.CourseManagement.Services.Tests
         /// <summary>
         /// Creates a UnitOfWork with a fresh in-memory database
         /// </summary>
-        public static IUnitOfWork CreateUnitOfWork(string dbName = null)
+        public static IUnitOfWork CreateUnitOfWork(string? dbName = null)
         {
             var context = CreateInMemoryContext(dbName);
             return new UnitOfWork(context);

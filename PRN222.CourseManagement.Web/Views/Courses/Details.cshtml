@@ -1,0 +1,63 @@
+@model CourseManagement.Models.Course
+
+@{
+    ViewData["Title"] = "Course Details";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>Course Details</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Course Code</dt>
+                        <dd class="col-sm-8">@Model.CourseCode</dd>
+
+                        <dt class="col-sm-4">Title</dt>
+                        <dd class="col-sm-8">@Model.Title</dd>
+
+                        <dt class="col-sm-4">Credits</dt>
+                        <dd class="col-sm-8">@Model.Credits</dd>
+
+                        <dt class="col-sm-4">Department</dt>
+                        <dd class="col-sm-8">@Model.Department?.Name</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            @switch (Model.Status)
+                            {
+                                case CourseManagement.Models.CourseStatus.Active:
+                                    <span class="badge bg-success">Active</span>
+                                    break;
+                                case CourseManagement.Models.CourseStatus.Inactive:
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                    break;
+                                case CourseManagement.Models.CourseStatus.Archived:
+                                    <span class="badge bg-secondary">Archived</span>
+                                    break;
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Total Enrollments</dt>
+                        <dd class="col-sm-8">@Model.Enrollments.Count student(s)</dd>
+                    </dl>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                        <div>
+                            <a asp-controller="Enrollments" asp-action="ByCourse" asp-route-id="@Model.CourseId" class="btn btn-info">
+                                <i class="bi bi-people"></i> View Enrollments
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@Model.CourseId" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

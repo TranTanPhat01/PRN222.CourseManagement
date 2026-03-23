@@ -1,0 +1,81 @@
+@model CourseManagement.Models.Enrollment
+
+@{
+    ViewData["Title"] = "Delete Enrollment";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3>Unenroll Student</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Warning!</strong> Are you sure you want to unenroll this student from the course?
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-4">Student</dt>
+                        <dd class="col-sm-8">@Model.Student?.FullName (@Model.Student?.StudentCode)</dd>
+
+                        <dt class="col-sm-4">Course</dt>
+                        <dd class="col-sm-8">@Model.Course?.Title (@Model.Course?.CourseCode)</dd>
+
+                        <dt class="col-sm-4">Enroll Date</dt>
+                        <dd class="col-sm-8">@Model.EnrollDate.ToString("yyyy-MM-dd")</dd>
+
+                        <dt class="col-sm-4">Grade</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Grade.HasValue)
+                            {
+                                @Model.Grade.Value.ToString("F2")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not graded</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Grade Status</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.IsGradeFinalized)
+                            {
+                                <span class="badge bg-success">Finalized</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                            }
+                        </dd>
+                    </dl>
+
+                    @if (Model.IsGradeFinalized)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Error:</strong> Cannot unenroll. The grade has been finalized.
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="studentId" value="@Model.StudentId" />
+                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Unenroll
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
