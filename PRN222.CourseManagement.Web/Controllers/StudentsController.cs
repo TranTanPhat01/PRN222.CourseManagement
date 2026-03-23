@@ -119,6 +119,12 @@ namespace PRN222.CourseManagement.Web.Controllers
             }
 
             // Map Domain Model to ViewModel
+            if (result.Data == null)
+            {
+                TempData["ErrorMessage"] = "Student data is empty";
+                return RedirectToAction(nameof(Index));
+            }
+
             var viewModel = new StudentViewModel
             {
                 StudentId = result.Data.StudentId,

@@ -1,4 +1,4 @@
-﻿using CourseManagement.Models;
+using CourseManagement.Models;
 using CourseManagement.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
@@ -60,10 +60,25 @@ namespace CourseManagement.Repositories.Implementations
             _transaction = null;
         }
 
+        private bool _disposed = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _transaction?.Dispose();
+                    _context.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
         public void Dispose()
         {
-            _transaction?.Dispose();
-            _context.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

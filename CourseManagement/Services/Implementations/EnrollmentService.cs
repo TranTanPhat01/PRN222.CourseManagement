@@ -145,14 +145,7 @@
                         return ServiceResult.Failure("Student cannot enroll in more than 10 courses");
                     }
 
-                    /* 
-                    // BR19: Student can enroll only in courses of the same department
-                    if (student.DepartmentId != course.DepartmentId)
-                    {
-                        _unitOfWork.Rollback();
-                        return ServiceResult.Failure("Student can only enroll in courses from their own department");
-                    }
-                    */
+
                     // BR29: student must be active
                     if (!student.IsActive)
                     {

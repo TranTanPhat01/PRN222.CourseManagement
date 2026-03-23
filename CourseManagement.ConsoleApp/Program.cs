@@ -1,4 +1,4 @@
-﻿using CourseManagement.Models;
+using CourseManagement.Models;
 using CourseManagement.Repositories.Implementations;
 using CourseManagement.Repositories.Interfaces;
 using CourseManagement.Services.Implementations;
@@ -18,7 +18,7 @@ IConfiguration config = new ConfigurationBuilder()
 
 var connStr = config.GetConnectionString("CourseManagementDB");
 if (string.IsNullOrWhiteSpace(connStr))
-    throw new Exception("Missing ConnectionStrings:CourseManagementDB in appsettings.json");
+    throw new InvalidOperationException("Missing ConnectionStrings:CourseManagementDB in appsettings.json");
 
 // Register DbContext
 services.AddDbContext<CourseManagementContext>(options =>
@@ -68,261 +68,259 @@ while (true)
 
     switch (choice)
     {
-        case "1": // Display all departments
-            Console.Clear();
-            Console.WriteLine("=== All Departments ===");
-            var deptResult = departmentService.GetAllDepartments();
-            if (deptResult.IsSuccess && deptResult.Data != null)
-            {
-                foreach (var d in deptResult.Data)
-                {
-                    Console.WriteLine($"{d.DepartmentId} - {d.Name} - {d.Description}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Error: {deptResult.Message}");
-            }
-            Pause();
-            break;
-
-        case "2": // Display all students
-            Console.Clear();
-            Console.WriteLine("=== All Students ===");
-            var studentResult = studentService.GetAllStudents();
-            if (studentResult.IsSuccess && studentResult.Data != null)
-            {
-                foreach (var s in studentResult.Data)
-                {
-                    Console.WriteLine($"{s.StudentId} - {s.StudentCode} - {s.FullName} - {s.Email} - Dept:{s.DepartmentId}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Error: {studentResult.Message}");
-            }
-            Pause();
-            break;
-
-        case "3": // Display all courses
-            Console.Clear();
-            Console.WriteLine("=== All Courses ===");
-            var courseResult = courseService.GetAllCourses();
-            if (courseResult.IsSuccess && courseResult.Data != null)
-            {
-                foreach (var c in courseResult.Data)
-                {
-                    Console.WriteLine($"{c.CourseId} - {c.CourseCode} - {c.Title} - Credits:{c.Credits} - Status:{c.Status}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Error: {courseResult.Message}");
-            }
-            Pause();
-            break;
-
-        case "4": // Add new department
-            Console.Clear();
-            Console.WriteLine("=== Add New Department ===");
-            Console.Write("Department Name: ");
-            var deptName = Console.ReadLine();
-            Console.Write("Description (optional): ");
-            var deptDesc = Console.ReadLine();
-
-            var newDept = new Department
-            {
-                Name = deptName!,
-                Description = deptDesc
-            };
-
-            var addDeptResult = departmentService.AddDepartment(newDept);
-            Console.WriteLine(addDeptResult.IsSuccess
-                ? $"✓ Success: {addDeptResult.Message}"
-                : $"✗ Failed: {addDeptResult.Message}");
-            Pause();
-            break;
-
-        case "5": // Add new student
-            Console.Clear();
-            Console.WriteLine("=== Add New Student ===");
-            Console.Write("Student Code: ");
-            var stuCode = Console.ReadLine();
-            Console.Write("Full Name: ");
-            var stuName = Console.ReadLine();
-            Console.Write("Email: ");
-            var stuEmail = Console.ReadLine();
-            Console.Write("Department ID: ");
-            int stuDeptId = int.Parse(Console.ReadLine()!);
-
-            var newStudent = new Student
-            {
-                StudentCode = stuCode!,
-                FullName = stuName!,
-                Email = stuEmail!,
-                DepartmentId = stuDeptId
-            };
-
-            var addStuResult = studentService.AddStudent(newStudent);
-            Console.WriteLine(addStuResult.IsSuccess
-                ? $"✓ Success: {addStuResult.Message}"
-                : $"✗ Failed: {addStuResult.Message}");
-            Pause();
-            break;
-
-        case "6": // Add new course
-            Console.Clear();
-            Console.WriteLine("=== Add New Course ===");
-            Console.Write("Course Code: ");
-            var courseCode = Console.ReadLine();
-            Console.Write("Title: ");
-            var courseTitle = Console.ReadLine();
-            Console.Write("Credits (1-6): ");
-            int credits = int.Parse(Console.ReadLine()!);
-            Console.Write("Department ID: ");
-            int courseDeptId = int.Parse(Console.ReadLine()!);
-
-            var newCourse = new Course
-            {
-                CourseCode = courseCode!,
-                Title = courseTitle!,
-                Credits = credits,
-                DepartmentId = courseDeptId,
-                Status = CourseStatus.Active
-            };
-
-            var addCourseResult = courseService.AddCourse(newCourse);
-            Console.WriteLine(addCourseResult.IsSuccess
-                ? $"✓ Success: {addCourseResult.Message}"
-                : $"✗ Failed: {addCourseResult.Message}");
-            Pause();
-            break;
-
-        case "7": // Enroll student
-            Console.Clear();
-            Console.WriteLine("=== Enroll Student into Course ===");
-            Console.Write("Student ID: ");
-            int enrollStudentId = int.Parse(Console.ReadLine()!);
-            Console.Write("Course ID: ");
-            int enrollCourseId = int.Parse(Console.ReadLine()!);
-
-            var enrollResult = enrollmentService.EnrollStudent(enrollStudentId, enrollCourseId, DateTime.Now);
-            Console.WriteLine(enrollResult.IsSuccess
-                ? $"✓ Success: {enrollResult.Message}"
-                : $"✗ Failed: {enrollResult.Message}");
-            Pause();
-            break;
-
-        case "8": // Assign grade
-            Console.Clear();
-            Console.WriteLine("=== Assign Grade ===");
-            Console.Write("Student ID: ");
-            int gradeStudentId = int.Parse(Console.ReadLine()!);
-            Console.Write("Course ID: ");
-            int gradeCourseId = int.Parse(Console.ReadLine()!);
-            Console.Write("Grade (0-10): ");
-            decimal grade = decimal.Parse(Console.ReadLine()!);
-
-            var gradeResult = enrollmentService.AssignGrade(gradeStudentId, gradeCourseId, grade);
-            Console.WriteLine(gradeResult.IsSuccess
-                ? $"✓ Success: {gradeResult.Message}"
-                : $"✗ Failed: {gradeResult.Message}");
-
-            if (gradeResult.IsSuccess)
-            {
-                Console.Write("\nFinalize this grade? (y/n): ");
-                if (Console.ReadLine()?.ToLower() == "y")
-                {
-                    var finalizeResult = enrollmentService.FinalizeGrade(gradeStudentId, gradeCourseId);
-                    Console.WriteLine(finalizeResult.IsSuccess
-                        ? $"✓ Grade finalized: {finalizeResult.Message}"
-                        : $"✗ Failed to finalize: {finalizeResult.Message}");
-                }
-            }
-            Pause();
-            break;
-
-        case "9": // Update student
-            Console.Clear();
-            Console.WriteLine("=== Update Student Information ===");
-            Console.Write("Student ID: ");
-            int updateId = int.Parse(Console.ReadLine()!);
-
-            var existingStudent = studentService.GetStudentById(updateId);
-            if (!existingStudent.IsSuccess || existingStudent.Data == null)
-            {
-                Console.WriteLine($"✗ Failed: {existingStudent.Message}");
-                Pause();
-                break;
-            }
-
-            Console.WriteLine($"Current Info: {existingStudent.Data.FullName} - {existingStudent.Data.Email}");
-            Console.Write("New Full Name: ");
-            var newName = Console.ReadLine();
-            Console.Write("New Email: ");
-            var newEmail = Console.ReadLine();
-
-            existingStudent.Data.FullName = string.IsNullOrWhiteSpace(newName) ? existingStudent.Data.FullName : newName;
-            existingStudent.Data.Email = string.IsNullOrWhiteSpace(newEmail) ? existingStudent.Data.Email : newEmail;
-
-            var updateResult = studentService.UpdateStudent(existingStudent.Data);
-            Console.WriteLine(updateResult.IsSuccess
-                ? $"✓ Success: {updateResult.Message}"
-                : $"✗ Failed: {updateResult.Message}");
-            Pause();
-            break;
-
-        case "10": // Delete course
-            Console.Clear();
-            Console.WriteLine("=== Delete Course ===");
-            Console.Write("Course ID to delete: ");
-            int delId = int.Parse(Console.ReadLine()!);
-
-            var deleteResult = courseService.DeleteCourse(delId);
-            Console.WriteLine(deleteResult.IsSuccess
-                ? $"✓ Success: {deleteResult.Message}"
-                : $"✗ Failed: {deleteResult.Message}");
-            Pause();
-            break;
-
-        case "11": // Enrollment report
-            Console.Clear();
-            Console.WriteLine("=== Enrollment Report ===");
-
-            var enrollments = enrollmentService.GetAllEnrollments();
-            if (enrollments.IsSuccess && enrollments.Data != null)
-            {
-                var students = studentService.GetAllStudents().Data;
-                var courses = courseService.GetAllCourses().Data;
-
-                Console.WriteLine($"{"Student",-20} | {"Course",-25} | {"Enroll Date",-12} | {"Grade",-6} | Finalized");
-                Console.WriteLine(new string('-', 85));
-
-                foreach (var e in enrollments.Data)
-                {
-                    var student = students?.FirstOrDefault(s => s.StudentId == e.StudentId);
-                    var course = courses?.FirstOrDefault(c => c.CourseId == e.CourseId);
-
-                    Console.WriteLine(
-                        $"{student?.FullName,-20} | {course?.Title,-25} | {e.EnrollDate:yyyy-MM-dd} | {(e.Grade?.ToString("F1") ?? "N/A"),-6} | {(e.IsGradeFinalized ? "Yes" : "No")}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Error: {enrollments.Message}");
-            }
-            Pause();
-            break;
-
-        case "0": // Exit
-            Console.WriteLine("Goodbye!");
-            return;
-
-        default:
-            Console.WriteLine("Invalid option!");
-            Pause();
-            break;
+        case "1": DisplayDepartments(departmentService); break;
+        case "2": DisplayStudents(studentService); break;
+        case "3": DisplayCourses(courseService); break;
+        case "4": AddDepartment(departmentService); break;
+        case "5": AddStudent(studentService); break;
+        case "6": AddCourse(courseService); break;
+        case "7": EnrollStudent(enrollmentService); break;
+        case "8": AssignGrade(enrollmentService); break;
+        case "9": UpdateStudent(studentService); break;
+        case "10": DeleteCourse(courseService); break;
+        case "11": DisplayEnrollmentReport(enrollmentService, studentService, courseService); break;
+        case "0": Console.WriteLine("Goodbye!"); return;
+        default: Console.WriteLine("Invalid option!"); Pause(); break;
     }
+}
+
+static void DisplayDepartments(IDepartmentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== All Departments ===");
+    var result = service.GetAllDepartments();
+    if (result.IsSuccess && result.Data != null)
+    {
+        foreach (var d in result.Data) Console.WriteLine($"{d.DepartmentId} - {d.Name} - {d.Description}");
+    }
+    else Console.WriteLine($"Error: {result.Message}");
+    Pause();
+}
+
+static void DisplayStudents(IStudentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== All Students ===");
+    var result = service.GetAllStudents();
+    if (result.IsSuccess && result.Data != null)
+    {
+        foreach (var s in result.Data) Console.WriteLine($"{s.StudentId} - {s.StudentCode} - {s.FullName} - {s.Email} - Dept:{s.DepartmentId}");
+    }
+    else Console.WriteLine($"Error: {result.Message}");
+    Pause();
+}
+
+static void DisplayCourses(ICourseService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== All Courses ===");
+    var result = service.GetAllCourses();
+    if (result.IsSuccess && result.Data != null)
+    {
+        foreach (var c in result.Data) Console.WriteLine($"{c.CourseId} - {c.CourseCode} - {c.Title} - Credits:{c.Credits} - Status:{c.Status}");
+    }
+    else Console.WriteLine($"Error: {result.Message}");
+    Pause();
+}
+
+static void AddDepartment(IDepartmentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Add New Department ===");
+    Console.Write("Department Name: ");
+    var deptName = Console.ReadLine();
+    Console.Write("Description (optional): ");
+    var deptDesc = Console.ReadLine();
+
+    var newDept = new Department
+    {
+        Name = deptName!,
+        Description = deptDesc
+    };
+
+    var addDeptResult = service.AddDepartment(newDept);
+    Console.WriteLine(addDeptResult.IsSuccess
+        ? $"✓ Success: {addDeptResult.Message}"
+        : $"✗ Failed: {addDeptResult.Message}");
+    Pause();
+}
+
+static void AddStudent(IStudentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Add New Student ===");
+    Console.Write("Student Code: ");
+    var stuCode = Console.ReadLine();
+    Console.Write("Full Name: ");
+    var stuName = Console.ReadLine();
+    Console.Write("Email: ");
+    var stuEmail = Console.ReadLine();
+    Console.Write("Department ID: ");
+    int stuDeptId = int.Parse(Console.ReadLine()!);
+
+    var newStudent = new Student
+    {
+        StudentCode = stuCode!,
+        FullName = stuName!,
+        Email = stuEmail!,
+        DepartmentId = stuDeptId
+    };
+
+    var addStuResult = service.AddStudent(newStudent);
+    Console.WriteLine(addStuResult.IsSuccess
+        ? $"✓ Success: {addStuResult.Message}"
+        : $"✗ Failed: {addStuResult.Message}");
+    Pause();
+}
+
+static void AddCourse(ICourseService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Add New Course ===");
+    Console.Write("Course Code: ");
+    var courseCode = Console.ReadLine();
+    Console.Write("Title: ");
+    var courseTitle = Console.ReadLine();
+    Console.Write("Credits (1-6): ");
+    int credits = int.Parse(Console.ReadLine()!);
+    Console.Write("Department ID: ");
+    int courseDeptId = int.Parse(Console.ReadLine()!);
+
+    var newCourse = new Course
+    {
+        CourseCode = courseCode!,
+        Title = courseTitle!,
+        Credits = credits,
+        DepartmentId = courseDeptId,
+        Status = CourseStatus.Active
+    };
+
+    var addCourseResult = service.AddCourse(newCourse);
+    Console.WriteLine(addCourseResult.IsSuccess
+        ? $"✓ Success: {addCourseResult.Message}"
+        : $"✗ Failed: {addCourseResult.Message}");
+    Pause();
+}
+
+static void EnrollStudent(IEnrollmentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Enroll Student into Course ===");
+    Console.Write("Student ID: ");
+    int enrollStudentId = int.Parse(Console.ReadLine()!);
+    Console.Write("Course ID: ");
+    int enrollCourseId = int.Parse(Console.ReadLine()!);
+
+    var enrollResult = service.EnrollStudent(enrollStudentId, enrollCourseId, DateTime.Now);
+    Console.WriteLine(enrollResult.IsSuccess
+        ? $"✓ Success: {enrollResult.Message}"
+        : $"✗ Failed: {enrollResult.Message}");
+    Pause();
+}
+
+static void AssignGrade(IEnrollmentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Assign Grade ===");
+    Console.Write("Student ID: ");
+    int gradeStudentId = int.Parse(Console.ReadLine()!);
+    Console.Write("Course ID: ");
+    int gradeCourseId = int.Parse(Console.ReadLine()!);
+    Console.Write("Grade (0-10): ");
+    decimal grade = decimal.Parse(Console.ReadLine()!);
+
+    var gradeResult = service.AssignGrade(gradeStudentId, gradeCourseId, grade);
+    Console.WriteLine(gradeResult.IsSuccess
+        ? $"✓ Success: {gradeResult.Message}"
+        : $"✗ Failed: {gradeResult.Message}");
+
+    if (gradeResult.IsSuccess)
+    {
+        Console.Write("\nFinalize this grade? (y/n): ");
+        if (Console.ReadLine()?.ToLower() == "y")
+        {
+            var finalizeResult = service.FinalizeGrade(gradeStudentId, gradeCourseId);
+            Console.WriteLine(finalizeResult.IsSuccess
+                ? $"✓ Grade finalized: {finalizeResult.Message}"
+                : $"✗ Failed to finalize: {finalizeResult.Message}");
+        }
+    }
+    Pause();
+}
+
+static void UpdateStudent(IStudentService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Update Student Information ===");
+    Console.Write("Student ID: ");
+    int updateId = int.Parse(Console.ReadLine()!);
+
+    var existingStudent = service.GetStudentById(updateId);
+    if (!existingStudent.IsSuccess || existingStudent.Data == null)
+    {
+        Console.WriteLine($"✗ Failed: {existingStudent.Message}");
+        Pause();
+        return;
+    }
+
+    Console.WriteLine($"Current Info: {existingStudent.Data.FullName} - {existingStudent.Data.Email}");
+    Console.Write("New Full Name: ");
+    var newName = Console.ReadLine();
+    Console.Write("New Email: ");
+    var newEmail = Console.ReadLine();
+
+    existingStudent.Data.FullName = string.IsNullOrWhiteSpace(newName) ? existingStudent.Data.FullName : newName;
+    existingStudent.Data.Email = string.IsNullOrWhiteSpace(newEmail) ? existingStudent.Data.Email : newEmail;
+
+    var updateResult = service.UpdateStudent(existingStudent.Data);
+    Console.WriteLine(updateResult.IsSuccess
+        ? $"✓ Success: {updateResult.Message}"
+        : $"✗ Failed: {updateResult.Message}");
+    Pause();
+}
+
+static void DeleteCourse(ICourseService service)
+{
+    Console.Clear();
+    Console.WriteLine("=== Delete Course ===");
+    Console.Write("Course ID to delete: ");
+    int delId = int.Parse(Console.ReadLine()!);
+
+    var deleteResult = service.DeleteCourse(delId);
+    Console.WriteLine(deleteResult.IsSuccess
+        ? $"✓ Success: {deleteResult.Message}"
+        : $"✗ Failed: {deleteResult.Message}");
+    Pause();
+}
+
+static void DisplayEnrollmentReport(IEnrollmentService enrollService, IStudentService stuService, ICourseService couService)
+{
+    Console.Clear();
+    Console.WriteLine("=== Enrollment Report ===");
+
+    var enrollments = enrollService.GetAllEnrollments();
+    if (enrollments.IsSuccess && enrollments.Data != null)
+    {
+        var students = stuService.GetAllStudents().Data;
+        var courses = couService.GetAllCourses().Data;
+
+        Console.WriteLine($"{"Student",-20} | {"Course",-25} | {"Enroll Date",-12} | {"Grade",-6} | Finalized");
+        Console.WriteLine(new string('-', 85));
+
+        foreach (var e in enrollments.Data)
+        {
+            var student = students?.FirstOrDefault(s => s.StudentId == e.StudentId);
+            var course = courses?.FirstOrDefault(c => c.CourseId == e.CourseId);
+
+            Console.WriteLine(
+                $"{student?.FullName,-20} | {course?.Title,-25} | {e.EnrollDate:yyyy-MM-dd} | {(e.Grade?.ToString("F1") ?? "N/A"),-6} | {(e.IsGradeFinalized ? "Yes" : "No")}");
+        }
+    }
+    else
+    {
+        Console.WriteLine($"Error: {enrollments.Message}");
+    }
+    Pause();
 }
 
 static void Pause()
