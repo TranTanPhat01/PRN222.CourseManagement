@@ -7,7 +7,7 @@ using CourseManagement.Services.Implementations;
 
 namespace PRN222.CourseManagement.Web
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {

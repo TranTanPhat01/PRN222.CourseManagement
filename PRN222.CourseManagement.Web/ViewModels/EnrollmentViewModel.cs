@@ -10,16 +10,16 @@ namespace PRN222.CourseManagement.Web.ViewModels
     {
         [Required(ErrorMessage = "Student is required")]
         [Display(Name = "Student")]
-        public int StudentId { get; set; }
+        public int? StudentId { get; set; }
 
         [Required(ErrorMessage = "Course is required")]
         [Display(Name = "Course")]
-        public int CourseId { get; set; }
+        public int? CourseId { get; set; }
 
         [Required(ErrorMessage = "Enrollment Date is required")]
         [Display(Name = "Enrollment Date")]
         [DataType(DataType.Date)]
-        public DateTime EnrollDate { get; set; } = DateTime.Today;
+        public DateTime? EnrollDate { get; set; } = DateTime.Today;
 
         [Display(Name = "Grade")]
         [Range(0, 10, ErrorMessage = "Grade must be between 0 and 10")]

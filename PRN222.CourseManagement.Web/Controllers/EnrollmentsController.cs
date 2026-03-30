@@ -13,6 +13,10 @@ namespace PRN222.CourseManagement.Web.Controllers
     /// </summary>
     public class EnrollmentsController : Controller
     {
+        private const string ErrorMessageKey = "ErrorMessage";
+        private const string SuccessMessageKey = "SuccessMessage";
+        private const string WarningMessageKey = "WarningMessage";
+
         private readonly IEnrollmentService _enrollmentService;
         private readonly IStudentService _studentService;
         private readonly ICourseService _courseService;
@@ -34,7 +38,7 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return View(new List<Enrollment>());
             }
 
@@ -46,7 +50,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (studentId == null || courseId == null)
             {
-                TempData["ErrorMessage"] = "Both Student ID and Course ID are required";
+                TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -54,7 +58,7 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -81,24 +85,21 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return View(model);
             }
 
-            // Call service to enroll student
             var result = _enrollmentService.EnrollStudent(
-                model.StudentId,
-                model.CourseId,
-                model.EnrollDate
+                model.StudentId ?? 0,
+                model.CourseId ?? 0,
+                model.EnrollDate ?? DateTime.Today
             );
 
             if (!result.IsSuccess)
             {
-                // Translate ServiceResult errors to ModelState
-                // This could be duplicate enrollment, course inactive, etc.
                 ModelState.AddModelError(string.Empty, result.Message);
                 LoadStudentsDropdown();
                 LoadCoursesDropdown();
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = result.Message;
+            TempData[SuccessMessageKey] = result.Message;
             return RedirectToAction(nameof(Index));
         }
 
@@ -107,7 +108,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (studentId == null || courseId == null)
             {
-                TempData["ErrorMessage"] = "Both Student ID and Course ID are required";
+                TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -115,11 +116,10 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
-            // Map Domain Model to ViewModel
             var viewModel = new EnrollmentViewModel
             {
                 StudentId = result.Data.StudentId,
@@ -142,14 +142,14 @@ namespace PRN222.CourseManagement.Web.Controllers
             if (model.Grade.HasValue)
             {
                 var result = _enrollmentService.AssignGrade(
-                    model.StudentId,
-                    model.CourseId,
+                    model.StudentId ?? 0,
+                    model.CourseId ?? 0,
                     model.Grade.Value
                 );
 
                 if (result.IsSuccess)
                 {
-                    TempData["SuccessMessage"] = result.Message;
+                    TempData[SuccessMessageKey] = result.Message;
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -161,7 +161,10 @@ namespace PRN222.CourseManagement.Web.Controllers
             }
 
             // Reload Student and Course for the view if we reach here (error cases)
-            var enrollmentResult = _enrollmentService.GetEnrollment(model.StudentId, model.CourseId);
+            var enrollmentResult = _enrollmentService.GetEnrollment(
+                model.StudentId ?? 0,
+                model.CourseId ?? 0);
+
             if (enrollmentResult.IsSuccess)
             {
                 model.Student = enrollmentResult.Data.Student;
@@ -180,11 +183,11 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
             }
             else
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData[SuccessMessageKey] = result.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -195,7 +198,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (studentId == null || courseId == null)
             {
-                TempData["ErrorMessage"] = "Both Student ID and Course ID are required";
+                TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -203,7 +206,7 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -219,12 +222,11 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                // Business rule violation (e.g., grade is finalized)
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
             }
             else
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData[SuccessMessageKey] = result.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -235,14 +237,14 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Student ID is required";
+                TempData[ErrorMessageKey] = "Student ID is required";
                 return RedirectToAction(nameof(Index));
             }
 
             var studentResult = _studentService.GetStudentById(id.Value);
             if (!studentResult.IsSuccess)
             {
-                TempData["ErrorMessage"] = studentResult.Message;
+                TempData[ErrorMessageKey] = studentResult.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -250,11 +252,11 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!enrollmentsResult.IsSuccess)
             {
-                TempData["ErrorMessage"] = enrollmentsResult.Message;
+                TempData[ErrorMessageKey] = enrollmentsResult.Message;
                 return View(new List<Enrollment>());
             }
 
-            ViewBag.StudentName = studentResult.Data.FullName;
+            ViewBag.StudentName = studentResult.Data!.FullName;
             return View(enrollmentsResult.Data);
         }
 
@@ -263,14 +265,14 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Course ID is required";
+                TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
             }
 
             var courseResult = _courseService.GetCourseById(id.Value);
             if (!courseResult.IsSuccess)
             {
-                TempData["ErrorMessage"] = courseResult.Message;
+                TempData[ErrorMessageKey] = courseResult.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -278,11 +280,11 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!enrollmentsResult.IsSuccess)
             {
-                TempData["ErrorMessage"] = enrollmentsResult.Message;
+                TempData[ErrorMessageKey] = enrollmentsResult.Message;
                 return View(new List<Enrollment>());
             }
 
-            ViewBag.CourseTitle = courseResult.Data.Title;
+            ViewBag.CourseTitle = courseResult.Data!.Title;
             return View(enrollmentsResult.Data);
         }
 
@@ -296,7 +298,7 @@ namespace PRN222.CourseManagement.Web.Controllers
             if (studentsResult.IsSuccess)
             {
                 ViewBag.Students = new SelectList(
-                    studentsResult.Data.Where(s => s.IsActive).ToList(),
+                    studentsResult.Data!.Where(s => s.IsActive).ToList(),
                     "StudentId",
                     "FullName"
                 );
@@ -304,7 +306,7 @@ namespace PRN222.CourseManagement.Web.Controllers
             else
             {
                 ViewBag.Students = new SelectList(Enumerable.Empty<Student>());
-                TempData["WarningMessage"] = "Could not load students";
+                TempData[WarningMessageKey] = "Could not load students";
             }
         }
 
@@ -318,7 +320,7 @@ namespace PRN222.CourseManagement.Web.Controllers
             if (coursesResult.IsSuccess)
             {
                 ViewBag.Courses = new SelectList(
-                    coursesResult.Data.Where(c => c.Status == CourseStatus.Active).ToList(),
+                    coursesResult.Data!.Where(c => c.Status == CourseStatus.Active).ToList(),
                     "CourseId",
                     "Title"
                 );
@@ -326,7 +328,7 @@ namespace PRN222.CourseManagement.Web.Controllers
             else
             {
                 ViewBag.Courses = new SelectList(Enumerable.Empty<Course>());
-                TempData["WarningMessage"] = "Could not load courses";
+                TempData[WarningMessageKey] = "Could not load courses";
             }
         }
     }

@@ -13,6 +13,10 @@ namespace PRN222.CourseManagement.Web.Controllers
     /// </summary>
     public class CoursesController : Controller
     {
+        private const string ErrorMessageKey = "ErrorMessage";
+        private const string SuccessMessageKey = "SuccessMessage";
+        private const string WarningMessageKey = "WarningMessage";
+
         private readonly ICourseService _courseService;
         private readonly IDepartmentService _departmentService;
 
@@ -24,14 +28,14 @@ namespace PRN222.CourseManagement.Web.Controllers
             _departmentService = departmentService;
         }
 
-        // GET: Coursesa
+        // GET: Courses
         public IActionResult Index()
         {
             var result = _courseService.GetAllCourses();
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return View(new List<Course>());
             }
 
@@ -43,7 +47,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Course ID is required";
+                TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -51,7 +55,7 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -78,13 +82,12 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return View(model);
             }
 
-            // Map ViewModel to Domain Model
             var course = new Course
             {
                 CourseCode = model.CourseCode,
                 Title = model.Title,
-                Credits = model.Credits,
-                DepartmentId = model.DepartmentId,
+                Credits = model.Credits ?? 0,
+                DepartmentId = model.DepartmentId ?? 0,
                 Status = model.Status
             };
 
@@ -92,14 +95,13 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                // Translate ServiceResult errors to ModelState
                 ModelState.AddModelError(string.Empty, result.Message);
                 LoadDepartmentsDropdown();
                 LoadCourseStatusDropdown();
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = result.Message;
+            TempData[SuccessMessageKey] = result.Message;
             return RedirectToAction(nameof(Index));
         }
 
@@ -108,7 +110,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Course ID is required";
+                TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -116,14 +118,13 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
-            // Map Domain Model to ViewModel
             if (result.Data == null)
             {
-                TempData["ErrorMessage"] = "Course data is empty";
+                TempData[ErrorMessageKey] = "Course data is empty";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -147,9 +148,9 @@ namespace PRN222.CourseManagement.Web.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, CourseViewModel model)
         {
-            if (id != model.CourseId)
+            if (id != (model.CourseId ?? 0))
             {
-                TempData["ErrorMessage"] = "Course ID mismatch";
+                TempData[ErrorMessageKey] = "Course ID mismatch";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -160,14 +161,13 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return View(model);
             }
 
-            // Map ViewModel to Domain Model
             var course = new Course
             {
-                CourseId = model.CourseId,
+                CourseId = id,
                 CourseCode = model.CourseCode,
                 Title = model.Title,
-                Credits = model.Credits,
-                DepartmentId = model.DepartmentId,
+                Credits = model.Credits ?? 0,
+                DepartmentId = model.DepartmentId ?? 0,
                 Status = model.Status
             };
 
@@ -181,7 +181,7 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = result.Message;
+            TempData[SuccessMessageKey] = result.Message;
             return RedirectToAction(nameof(Index));
         }
 
@@ -190,7 +190,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Course ID is required";
+                TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -198,7 +198,7 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -214,12 +214,11 @@ namespace PRN222.CourseManagement.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                // Business rule violation (e.g., course has enrollments)
-                TempData["ErrorMessage"] = result.Message;
+                TempData[ErrorMessageKey] = result.Message;
             }
             else
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData[SuccessMessageKey] = result.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -243,7 +242,7 @@ namespace PRN222.CourseManagement.Web.Controllers
             else
             {
                 ViewBag.Departments = new SelectList(Enumerable.Empty<Department>());
-                TempData["WarningMessage"] = "Could not load departments";
+                TempData[WarningMessageKey] = "Could not load departments";
             }
         }
 

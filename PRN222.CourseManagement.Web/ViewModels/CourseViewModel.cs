@@ -8,7 +8,7 @@ namespace PRN222.CourseManagement.Web.ViewModels
     /// </summary>
     public class CourseViewModel
     {
-        public int CourseId { get; set; }
+        public int? CourseId { get; set; }
 
         [Required(ErrorMessage = "Course Code is required")]
         [StringLength(20, ErrorMessage = "Course Code cannot exceed 20 characters")]
@@ -22,11 +22,11 @@ namespace PRN222.CourseManagement.Web.ViewModels
 
         [Required(ErrorMessage = "Credits is required")]
         [Range(1, 10, ErrorMessage = "Credits must be between 1 and 10")]
-        public int Credits { get; set; }
+        public int? Credits { get; set; }
 
         [Required(ErrorMessage = "Department is required")]
         [Display(Name = "Department")]
-        public int DepartmentId { get; set; }
+        public int? DepartmentId { get; set; }
 
         [Display(Name = "Status")]
         public CourseStatus Status { get; set; } = CourseStatus.Active;

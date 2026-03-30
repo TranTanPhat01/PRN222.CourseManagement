@@ -8,7 +8,7 @@ namespace PRN222.CourseManagement.Web.ViewModels
     /// </summary>
     public class StudentViewModel
     {
-        public int StudentId { get; set; }
+        public int? StudentId { get; set; }
 
         [Required(ErrorMessage = "Student Code is required")]
         [StringLength(20, ErrorMessage = "Student Code cannot exceed 20 characters")]
@@ -27,12 +27,12 @@ namespace PRN222.CourseManagement.Web.ViewModels
 
         [Required(ErrorMessage = "Department is required")]
         [Display(Name = "Department")]
-        public int DepartmentId { get; set; }
+        public int? DepartmentId { get; set; }
 
         [Required(ErrorMessage = "Date of Birth is required")]
         [Display(Name = "Date of Birth")]
         [DataType(DataType.Date)]
-        public DateTime DateOfBirth { get; set; } = DateTime.Today.AddYears(-20);
+        public DateTime? DateOfBirth { get; set; } = DateTime.Today.AddYears(-20);
 
         [Display(Name = "Active Status")]
         public bool IsActive { get; set; } = true;
