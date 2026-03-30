@@ -43,9 +43,10 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Courses/Details/5
+        [HttpGet]
         public IActionResult Details(int? id)
         {
-            if (id == null)
+            if (id == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
@@ -106,6 +107,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Courses/Edit/5
+        [HttpGet]
         public IActionResult Edit(int? id)
         {
             if (id == null)
@@ -185,10 +187,11 @@ namespace PRN222.CourseManagement.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Courses/Delete/5
+        // GET: Courses/Delete/5 - shows confirmation page with status info
+        [HttpGet]
         public IActionResult Delete(int? id)
         {
-            if (id == null)
+            if (id == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Course ID is required";
                 return RedirectToAction(nameof(Index));
@@ -202,6 +205,8 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Indicate to the view whether course can be deleted
+            ViewBag.CanDelete = result.Data != null;
             return View(result.Data);
         }
 

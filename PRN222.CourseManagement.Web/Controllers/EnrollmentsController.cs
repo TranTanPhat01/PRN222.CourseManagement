@@ -46,9 +46,10 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Enrollments/Details?studentId=1&courseId=1
+        [HttpGet]
         public IActionResult Details(int? studentId, int? courseId)
         {
-            if (studentId == null || courseId == null)
+            if (studentId == null || courseId == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
@@ -104,9 +105,10 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Enrollments/AssignGrade?studentId=1&courseId=1
+        [HttpGet]
         public IActionResult AssignGrade(int? studentId, int? courseId)
         {
-            if (studentId == null || courseId == null)
+            if (studentId == null || courseId == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
@@ -117,6 +119,12 @@ namespace PRN222.CourseManagement.Web.Controllers
             if (!result.IsSuccess)
             {
                 TempData[ErrorMessageKey] = result.Message;
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (result.Data == null)
+            {
+                TempData[ErrorMessageKey] = "Enrollment data is empty";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -165,7 +173,7 @@ namespace PRN222.CourseManagement.Web.Controllers
                 model.StudentId ?? 0,
                 model.CourseId ?? 0);
 
-            if (enrollmentResult.IsSuccess)
+            if (enrollmentResult.IsSuccess && enrollmentResult.Data != null)
             {
                 model.Student = enrollmentResult.Data.Student;
                 model.Course = enrollmentResult.Data.Course;
@@ -193,10 +201,11 @@ namespace PRN222.CourseManagement.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Enrollments/Delete?studentId=1&courseId=1
+        // GET: Enrollments/Delete?studentId=1&courseId=1 - shows unenroll confirmation
+        [HttpGet]
         public IActionResult Delete(int? studentId, int? courseId)
         {
-            if (studentId == null || courseId == null)
+            if (studentId == null || courseId == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Both Student ID and Course ID are required";
                 return RedirectToAction(nameof(Index));
@@ -210,6 +219,8 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Flag so the Delete view shows unenroll warning instead of details
+            ViewBag.IsDeleteConfirm = true;
             return View(result.Data);
         }
 

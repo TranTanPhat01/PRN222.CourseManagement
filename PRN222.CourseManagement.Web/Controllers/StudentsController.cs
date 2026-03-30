@@ -43,9 +43,10 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Students/Details/5
+        [HttpGet]
         public IActionResult Details(int? id)
         {
-            if (id == null)
+            if (id == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Student ID is required";
                 return RedirectToAction(nameof(Index));
@@ -105,6 +106,7 @@ namespace PRN222.CourseManagement.Web.Controllers
         }
 
         // GET: Students/Edit/5
+        [HttpGet]
         public IActionResult Edit(int? id)
         {
             if (id == null)
@@ -183,10 +185,11 @@ namespace PRN222.CourseManagement.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Students/Delete/5
+        // GET: Students/Delete/5 - shows confirmation page with enrollment info
+        [HttpGet]
         public IActionResult Delete(int? id)
         {
-            if (id == null)
+            if (id == null || !ModelState.IsValid)
             {
                 TempData[ErrorMessageKey] = "Student ID is required";
                 return RedirectToAction(nameof(Index));
@@ -200,6 +203,8 @@ namespace PRN222.CourseManagement.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Pass canDelete flag to view via ViewBag
+            ViewBag.CanDelete = result.Data != null;
             return View(result.Data);
         }
 
