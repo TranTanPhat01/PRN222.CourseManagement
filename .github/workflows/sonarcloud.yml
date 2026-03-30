@@ -37,12 +37,21 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/coverage.opencover.xml"
+          /d:sonar.coverage.exclusions="**/Migrations/**,**/obj/**,**/bin/**,**/*.cshtml,**/*Views*/**,**/*ViewModels*/**,**/appsettings*.json"
+          /d:sonar.duplication.exclusions="**/Migrations/**,**/obj/**"
 
       - name: Build
         run: dotnet build --no-restore
 
-      - name: Test
-        run: dotnet test --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/
+      - name: Test with Coverage
+        run: >
+          dotnet test
+          --no-build
+          --verbosity normal
+          /p:CollectCoverage=true
+          /p:CoverletOutputFormat=opencover
+          /p:CoverletOutput=./TestResults/
+          /p:Exclude="[*]*.Views*,[*]*.Migrations*,[*]*Program*"
 
       - name: SonarCloud End
         env:

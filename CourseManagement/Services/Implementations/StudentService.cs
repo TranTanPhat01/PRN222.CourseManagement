@@ -106,8 +106,9 @@ namespace CourseManagement.Services.Implementations
                 // BR09: Email if provided must be unique
                 if (!string.IsNullOrWhiteSpace(student.Email))
                 {
+                    var emailToCheck = student.Email.ToLower().Trim();
                     var duplicateEmail = _unitOfWork.Students
-                        .Find(s => s.Email.ToLower() == student.Email.ToLower().Trim())
+                        .Find(s => !string.IsNullOrWhiteSpace(s.Email) && s.Email.ToLower() == emailToCheck)
                         .FirstOrDefault();
 
                     if (duplicateEmail != null)
@@ -175,8 +176,9 @@ namespace CourseManagement.Services.Implementations
                 // BR09: Email if provided must be unique (excluding current student)
                 if (!string.IsNullOrWhiteSpace(student.Email))
                 {
+                    var emailToCheck = student.Email.ToLower().Trim();
                     var duplicateEmail = _unitOfWork.Students
-                        .Find(s => s.Email.ToLower() == student.Email.ToLower().Trim() 
+                        .Find(s => !string.IsNullOrWhiteSpace(s.Email) && s.Email.ToLower() == emailToCheck 
                                    && s.StudentId != student.StudentId)
                         .FirstOrDefault();
 

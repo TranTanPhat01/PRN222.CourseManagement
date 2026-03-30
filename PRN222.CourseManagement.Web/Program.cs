@@ -13,21 +13,10 @@ namespace PRN222.CourseManagement.Web
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ==============================================================
-            // DEPENDENCY INJECTION CONFIGURATION
-            // ==============================================================
-
             // 1. Register DbContext with SQL Server
             builder.Services.AddDbContext<CourseManagementContext>(options =>
                 options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("CourseManagementDB")
-                    // sqlOptions => sqlOptions.EnableRetryOnFailure(
-                    //     maxRetryCount: 3,
-                    //     maxRetryDelay: TimeSpan.FromSeconds(5),
-                    //     errorNumbersToAdd: null
-                    // )
-                )
-            );
+                    builder.Configuration.GetConnectionString("CourseManagementDB")));
 
             // 2. Register Unit of Work (Repository Layer)
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -41,29 +30,30 @@ namespace PRN222.CourseManagement.Web
             // 4. Add MVC Controllers with Views
             builder.Services.AddControllersWithViews();
 
-            // 5. Add TempData support for flash messages
+            // 5. Configure Session with secure cookie settings
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Fix Security Hotspot
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Strict;
+            });
+
+            // 6. Configure HSTS
+            builder.Services.AddHsts(options =>
+            {
+                options.Preload = true;
+                options.IncludeSubDomains = true;
+                options.MaxAge = TimeSpan.FromDays(365);
             });
 
             var app = builder.Build();
-
-            // ==============================================================
-            // HTTP REQUEST PIPELINE CONFIGURATION
-            // ==============================================================
 
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
-            }
-            else
-            {
-                app.UseDeveloperExceptionPage();
             }
 
             app.UseHttpsRedirection();

@@ -13,218 +13,271 @@ namespace PRN222.CourseManagement.Services.Tests
     [TestFixture]
     public class CourseServiceTests
     {
-        /// <summary>
-        /// TC11: Test BR11 - CourseCode must be unique
-        /// Given: A course with code "CS101" exists
-        /// When: Attempting to add another course with the same code
-        /// Then: Operation should fail with appropriate error message
-        /// </summary>
+        private CourseManagementContext _context = null!;
+        private UnitOfWork _unitOfWork = null!;
+        private CourseService _service = null!;
+        private bool _disposed = false;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _context = TestHelper.CreateInMemoryContext("CourseTests_" + System.Guid.NewGuid());
+            _unitOfWork = new UnitOfWork(_context);
+            _service = new CourseService(_unitOfWork);
+
+            var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
+            _context.Departments.Add(dept);
+            _context.SaveChanges();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (!_disposed)
+            {
+                _unitOfWork.Dispose();
+                _context.Dispose();
+                _disposed = true;
+            }
+        }
+
+        // =========================================================
+        // GET ALL / GET BY ID
+        // =========================================================
+
+        [Test]
+        public void GetAllCourses_EmptyDatabase_ReturnsEmptyList()
+        {
+            var result = _service.GetAllCourses();
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Data!.Any(), Is.False);
+        }
+
+        [Test]
+        public void GetAllCourses_WithCourses_ReturnsAll()
+        {
+            _context.Courses.Add(new Course { CourseCode = "CS101", Title = "Prog", Credits = 3, DepartmentId = 1 });
+            _context.Courses.Add(new Course { CourseCode = "CS102", Title = "OOP", Credits = 3, DepartmentId = 1 });
+            _context.SaveChanges();
+
+            var result = _service.GetAllCourses();
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Data!.Count(), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetCourseById_ExistingId_ReturnsCourse()
+        {
+            _context.Courses.Add(new Course { CourseId = 10, CourseCode = "CS200", Title = "DSA", Credits = 3, DepartmentId = 1 });
+            _context.SaveChanges();
+
+            var result = _service.GetCourseById(10);
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Data!.CourseCode, Is.EqualTo("CS200"));
+        }
+
+        [Test]
+        public void GetCourseById_NonExistingId_ReturnsFailure()
+        {
+            var result = _service.GetCourseById(999);
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Message, Does.Contain("not found"));
+        }
+
+        [Test]
+        public void GetCourseByCode_ExistingCode_ReturnsCourse()
+        {
+            _context.Courses.Add(new Course { CourseCode = "CS300", Title = "Algo", Credits = 3, DepartmentId = 1 });
+            _context.SaveChanges();
+
+            var result = _service.GetCourseByCode("CS300");
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Data!.Title, Is.EqualTo("Algo"));
+        }
+
+        [Test]
+        public void GetCourseByCode_NonExistingCode_ReturnsFailure()
+        {
+            var result = _service.GetCourseByCode("INVALID");
+            Assert.That(result.IsSuccess, Is.False);
+        }
+
+        // =========================================================
+        // ADD (BR11, BR12, BR13)
+        // =========================================================
+
+        /// <summary>TC11: BR11 - CourseCode must be unique</summary>
         [Test]
         public void TC11_AddCourse_DuplicateCode_ShouldFail()
         {
-            // Arrange
-            var context = TestHelper.CreateInMemoryContext("TC11_DB");
-            var unitOfWork = new UnitOfWork(context);
-            var service = new CourseService(unitOfWork);
+            _context.Courses.Add(new Course { CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1 });
+            _context.SaveChanges();
 
-            // Setup department
-            var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
-            context.Departments.Add(dept);
-            context.SaveChanges();
+            var result = _service.AddCourse(new Course { CourseCode = "CS101", Title = "Advanced Programming", Credits = 3, DepartmentId = 1 });
 
-            // Given: Course with code "CS101" exists
-            var existing = new Course 
-            { 
-                CourseCode = "CS101", 
-                Title = "Programming", 
-                Credits = 3,
-                DepartmentId = 1 
-            };
-            context.Courses.Add(existing);
-            context.SaveChanges();
-
-            // When: Attempting to add duplicate course code
-            var newCourse = new Course 
-            { 
-                CourseCode = "CS101", 
-                Title = "Advanced Programming", 
-                Credits = 3,
-                DepartmentId = 1 
-            };
-            var result = service.AddCourse(newCourse);
-
-            // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(result.Message, Does.Contain("already exists"));
-
-            context.Dispose();
         }
 
-        /// <summary>
-        /// TC12: Test BR12 - Course must belong to exactly one department
-        /// Given: Attempting to add a course to a non-existent department
-        /// When: Adding the course
-        /// Then: Operation should fail indicating department doesn't exist
-        /// </summary>
+        /// <summary>TC12: BR12 - Course must belong to existing department</summary>
         [Test]
         public void TC12_AddCourse_NonExistentDepartment_ShouldFail()
         {
-            // Arrange
-            var context = TestHelper.CreateInMemoryContext("TC12_DB");
-            var unitOfWork = new UnitOfWork(context);
-            var service = new CourseService(unitOfWork);
+            var result = _service.AddCourse(new Course { CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 999 });
 
-            // Given: Course with non-existent department
-            var course = new Course 
-            { 
-                CourseCode = "CS101", 
-                Title = "Programming", 
-                Credits = 3,
-                DepartmentId = 999 // Non-existent
-            };
-
-            // When: Attempting to add course
-            var result = service.AddCourse(course);
-
-            // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(result.Message, Does.Contain("does not exist"));
-
-            context.Dispose();
         }
 
-        /// <summary>
-        /// TC13: Test BR13 - Credits must be between 1 and 6
-        /// Given: A course with 0 credits
-        /// When: Attempting to add the course
-        /// Then: Operation should fail with validation error
-        /// </summary>
+        /// <summary>TC13: BR13 - Credits must be between 1 and 6</summary>
         [Test]
-        public void TC13_AddCourse_InvalidCredits_ShouldFail()
+        public void TC13_AddCourse_ZeroCredits_ShouldFail()
         {
-            // Arrange
-            var context = TestHelper.CreateInMemoryContext("TC13_DB");
-            var unitOfWork = new UnitOfWork(context);
-            var service = new CourseService(unitOfWork);
+            var result = _service.AddCourse(new Course { CourseCode = "CS101", Title = "Programming", Credits = 0, DepartmentId = 1 });
 
-            // Setup department
-            var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
-            context.Departments.Add(dept);
-            context.SaveChanges();
-
-            // Given: Course with invalid credits
-            var course = new Course 
-            { 
-                CourseCode = "CS101", 
-                Title = "Programming", 
-                Credits = 0, // Invalid
-                DepartmentId = 1 
-            };
-
-            // When: Attempting to add
-            var result = service.AddCourse(course);
-
-            // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(result.Message, Does.Contain("between 1 and 6"));
-
-            context.Dispose();
         }
 
-        /// <summary>
-        /// TC14: Test BR14 - Cannot delete course if has enrollments
-        /// Given: A course with active enrollments
-        /// When: Attempting to delete the course
-        /// Then: Operation should fail indicating enrollments exist
-        /// </summary>
         [Test]
-        public void TC14_DeleteCourse_HasEnrollments_ShouldFail()
+        public void TC13b_AddCourse_SevenCredits_ShouldFail()
         {
-            // Arrange
-            var context = TestHelper.CreateInMemoryContext("TC14_DB");
-            var unitOfWork = new UnitOfWork(context);
-            var service = new CourseService(unitOfWork);
+            var result = _service.AddCourse(new Course { CourseCode = "CS101", Title = "Programming", Credits = 7, DepartmentId = 1 });
 
-            // Given: Course with enrollment
-            var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
-            var student = new Student 
-            { 
-                StudentId = 1,
-                StudentCode = "STU001", 
-                FullName = "John Doe", 
-                Email = "john@test.com",
-                DepartmentId = 1 
-            };
-            var course = new Course 
-            { 
-                CourseId = 1,
-                CourseCode = "CS101", 
-                Title = "Programming", 
-                Credits = 3,
-                DepartmentId = 1 
-            };
-            var enrollment = new Enrollment 
-            { 
-                StudentId = 1, 
-                CourseId = 1, 
-                EnrollDate = System.DateTime.Now 
-            };
-
-            context.Departments.Add(dept);
-            context.Students.Add(student);
-            context.Courses.Add(course);
-            context.Enrollments.Add(enrollment);
-            context.SaveChanges();
-
-            // When: Attempting to delete course
-            var result = service.DeleteCourse(1);
-
-            // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Message, Does.Contain("has active enrollments"));
-
-            context.Dispose();
+            Assert.That(result.Message, Does.Contain("between 1 and 6"));
         }
 
-        /// <summary>
-        /// TC15: Test BR15 - Cannot update course if inactive or archived
-        /// Given: A course with Inactive status
-        /// When: Attempting to update the course
-        /// Then: Operation should fail indicating course is inactive
-        /// </summary>
+        [Test]
+        public void AddCourse_ValidData_ShouldSucceed()
+        {
+            var result = _service.AddCourse(new Course { CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1 });
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Message, Does.Contain("added successfully"));
+        }
+
+        // =========================================================
+        // UPDATE (BR11, BR12, BR13, BR15)
+        // =========================================================
+
+        [Test]
+        public void UpdateCourse_ValidData_ShouldSucceed()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+            _context.SaveChanges();
+
+            var result = _service.UpdateCourse(new Course { CourseId = 1, CourseCode = "CS101", Title = "Updated Programming", Credits = 4, DepartmentId = 1, Status = CourseStatus.Active });
+
+            Assert.That(result.IsSuccess, Is.True);
+        }
+
+        [Test]
+        public void UpdateCourse_NonExistentCourse_ShouldFail()
+        {
+            var result = _service.UpdateCourse(new Course { CourseId = 999, CourseCode = "CS999", Title = "X", Credits = 3, DepartmentId = 1 });
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Message, Does.Contain("not found"));
+        }
+
+        /// <summary>TC15: BR15 - Cannot update inactive course</summary>
         [Test]
         public void TC15_UpdateCourse_InactiveStatus_ShouldFail()
         {
-            // Arrange
-            var context = TestHelper.CreateInMemoryContext("TC15_DB");
-            var unitOfWork = new UnitOfWork(context);
-            var service = new CourseService(unitOfWork);
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Inactive });
+            _context.SaveChanges();
 
-            // Given: Inactive course
-            var dept = new Department { DepartmentId = 1, Name = "Computer Science" };
-            var course = new Course 
-            { 
-                CourseId = 1,
-                CourseCode = "CS101", 
-                Title = "Programming", 
-                Credits = 3,
-                DepartmentId = 1,
-                Status = CourseStatus.Inactive // Inactive
-            };
+            var result = _service.UpdateCourse(new Course { CourseId = 1, CourseCode = "CS101", Title = "Updated", Credits = 3, DepartmentId = 1, Status = CourseStatus.Inactive });
 
-            context.Departments.Add(dept);
-            context.Courses.Add(course);
-            context.SaveChanges();
-
-            // When: Attempting to update
-            course.Title = "Updated Programming";
-            var result = service.UpdateCourse(course);
-
-            // Then: Should fail
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(result.Message, Does.Contain("Inactive"));
+        }
 
-            context.Dispose();
+        [Test]
+        public void UpdateCourse_ArchivedStatus_ShouldFail()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Archived });
+            _context.SaveChanges();
+
+            var result = _service.UpdateCourse(new Course { CourseId = 1, CourseCode = "CS101", Title = "Updated", Credits = 3, DepartmentId = 1 });
+
+            Assert.That(result.IsSuccess, Is.False);
+        }
+
+        [Test]
+        public void UpdateCourse_DuplicateCodeOnOtherCourse_ShouldFail()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+            _context.Courses.Add(new Course { CourseId = 2, CourseCode = "CS102", Title = "OOP", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+            _context.SaveChanges();
+
+            var result = _service.UpdateCourse(new Course { CourseId = 2, CourseCode = "CS101", Title = "OOP Updated", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Message, Does.Contain("already exists"));
+        }
+
+        [Test]
+        public void UpdateCourse_InvalidCredits_ShouldFail()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+            _context.SaveChanges();
+
+            var result = _service.UpdateCourse(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 0, DepartmentId = 1 });
+
+            Assert.That(result.IsSuccess, Is.False);
+        }
+
+        [Test]
+        public void UpdateCourse_NonExistentDepartment_ShouldFail()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1, Status = CourseStatus.Active });
+            _context.SaveChanges();
+
+            var result = _service.UpdateCourse(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 999 });
+
+            Assert.That(result.IsSuccess, Is.False);
+        }
+
+        // =========================================================
+        // DELETE (BR14)
+        // =========================================================
+
+        /// <summary>TC14: BR14 - Cannot delete course with enrollments</summary>
+        [Test]
+        public void TC14_DeleteCourse_HasEnrollments_ShouldFail()
+        {
+            var student = new Student { StudentId = 1, StudentCode = "STU001", FullName = "John Doe", Email = "john@test.com", DepartmentId = 1 };
+            _context.Students.Add(student);
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1 });
+            _context.Enrollments.Add(new Enrollment { StudentId = 1, CourseId = 1, EnrollDate = System.DateTime.Now });
+            _context.SaveChanges();
+
+            var result = _service.DeleteCourse(1);
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Message, Does.Contain("has active enrollments"));
+        }
+
+        [Test]
+        public void DeleteCourse_NoEnrollments_ShouldSucceed()
+        {
+            _context.Courses.Add(new Course { CourseId = 1, CourseCode = "CS101", Title = "Programming", Credits = 3, DepartmentId = 1 });
+            _context.SaveChanges();
+
+            var result = _service.DeleteCourse(1);
+
+            Assert.That(result.IsSuccess, Is.True);
+        }
+
+        [Test]
+        public void DeleteCourse_NonExistentCourse_ShouldFail()
+        {
+            var result = _service.DeleteCourse(999);
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Message, Does.Contain("not found"));
         }
     }
 }
