@@ -37,9 +37,9 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/coverage.opencover.xml"
-          /d:sonar.coverage.exclusions="**/PRN222.CourseManagement.Web/**,**/Migrations/**,**/obj/**,**/bin/**,**/*.cshtml"
-          /d:sonar.duplication.exclusions="**/Migrations/**,**/obj/**"
+          /d:sonar.coverage.exclusions="**/PRN222.CourseManagement.Web/**,**/CourseManagement.ConsoleApp/**,**/Migrations/**,**/obj/**,**/bin/**,**/*.cshtml"
           /d:sonar.exclusions="**/Migrations/**,**/obj/**,**/bin/**,**/*.cshtml"
+          /d:sonar.duplication.exclusions="**/Migrations/**,**/obj/**,**/CourseManagement.ConsoleApp/**"
 
       - name: Build
         run: dotnet build --no-restore
